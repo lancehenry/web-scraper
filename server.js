@@ -40,11 +40,11 @@ mongoose.connect('mongodb://localhost/onion');
 // GET route for scraping the Onion website
 app.get('/scrape', function(req, res) {
   // Grab the body of the html with request
-  axios.get('https://www.theonion.com/').then(function(response) {
+  axios.get('https://politics.theonion.com/').then(function(response) {
     // Load that into cheerio and save it to $
     var $ = cheerio.load(response.data);
 
-    $('h3 a.js_curation-click').each(function(i, element) {
+    $('article h1').each(function(i, element) {
       // Save an empty result object
       var result = {};
 
