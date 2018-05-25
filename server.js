@@ -12,7 +12,7 @@ var cheerio = require('cheerio');
 // Require all our models
 var db = require('./models');
 
-var PORT = process.env.PORT || 3000;
+var PORT = 8000;
 
 // Initialize Express
 var app = express();
@@ -29,8 +29,8 @@ app.use(express.static('public'));
 // Handlebars
 var exphbs = require('express-handlebars');
 
-app.engine("hbs", exphbs({ defaultLayout: "main" }));
-app.set("view engine", "hbs");
+app.engine('hbs', exphbs({ defaultLayout: 'main' }));
+app.set('view engine', 'hbs');
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost/onion');
@@ -41,28 +41,71 @@ mongoose.connect('mongodb://localhost/onion');
 app.get('/scrape', function(req, res) {
   // Grab the body of the html with request
   axios.get('https://www.theonion.com/').then(function(response) {
-		// Load that into cheerio and save it to $
-		var $ = cheerio.load(response.data);
+    // Load that into cheerio and save it to $
+    var $ = cheerio.load(response.data);
 
-		$('h2.js_curation-click').each(function(i, element) {
-      
+    $('h3 a.js_curation-click').each(function(i, element) {
       // Save an empty result object
       var result = {};
 
       // Add the text and href of every link, save them as properties of the result object
-      result.title = $(this).children('a').text();
-      result.link = $(this).children('a').attr('href');
+      result.title = $(this)
+        .children('a')
+        .text();
+      result.link = $(this)
+        .children('a')
+        .attr('href');
 
       // Create a new Article using the 'result' object
-      db.Article.create(result).then(function(dbArticle) {
-        console.log(dbArticle);
-      })
-      .catch(function(err) {
-        // If error, sent it to the client
-        return res.json(err);
-      });
+      db.Article.create(result)
+        .then(function(dbArticle) {
+          console.log(dbArticle);
+        })
+        .catch(function(err) {
+          // If error, sent it to the client
+          return res.json(err);
+        });
     });
     // If successful, send a message to the client
     res.send('Scrape complete!');
   });
+});
+
+app.get('/articles', function(req, res) {
+  db.Article.find({})
+    .then(function(dbArticle) {
+      res.json(dbArticle);
+    })
+    .catch(function(err) {
+      res.json(err);
+    });
+});
+
+app.get('articles/:id', function(req, res) {
+  db.Article.findOne({ _id: req.params.id })
+    .populate('note')
+    .then(function(dbArticle) {
+      res.json(dbArticle);
+    })
+    .catch(function(err) {
+      res.json(err);
+    });
+});
+
+app.post('/articles/:id', function(req, res) {
+  db.Note.create(req.body)
+    .then(function(dbNote) {
+      return db.Article.findOneAndUpdate(
+        { _id: req.params.id }, { note: dbNote._id }, { new: true });
+    })
+    .then(function(dbArticle) {
+      res.json(dbArticle);
+    })
+    .catch(function(err) {
+      res.json(err);
+    });
+});
+
+app.listen(PORT, function() {
+  console.log('App running on port ' + PORT + '!');
 });
