@@ -44,6 +44,25 @@ app.get('/scrape', function(req, res) {
 		// Load that into cheerio and save it to $
 		var $ = cheerio.load(response.data);
 
-		$('article h2')
+		$('h2.js_curation-click').each(function(i, element) {
+      
+      // Save an empty result object
+      var result = {};
+
+      // Add the text and href of every link, save them as properties of the result object
+      result.title = $(this).children('a').text();
+      result.link = $(this).children('a').attr('href');
+
+      // Create a new Article using the 'result' object
+      db.Article.create(result).then(function(dbArticle) {
+        console.log(dbArticle);
+      })
+      .catch(function(err) {
+        // If error, sent it to the client
+        return res.json(err);
+      });
+    });
+    // If successful, send a message to the client
+    res.send('Scrape complete!');
   });
 });
