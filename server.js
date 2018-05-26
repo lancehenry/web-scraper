@@ -15,7 +15,7 @@ var Article = require('./models/Article.js');
 var Note = require('./models/Note.js');
 // var db = require('./models');
 
-var PORT = 8000;
+var PORT = process.env.PORT || 8000;
 
 // Initialize Express
 var app = express();
@@ -39,24 +39,23 @@ app.set('view engine', 'handlebars');
 //mongoose.connect('mongodb://localhost/onion');
 
 // Define local MongoDB URI
-var databaseUri = 'mongodb://localhost/onion';
+// var databaseUri = 'mongodb://localhost/onion';
 
-if (process.env.MONGODB_URI) {
-  mongoose.connect(process.env.MONGODB_URI);
-} else {
-  mongoose.connect(databaseUri);
+
+
+var db = process.env.MONGODB_URI || "mongodb://localhost/onion";
+
+mongoose.connect(db, function(error) {
+  if (error) {
+      console.log(error);
+  }
+
+else {
+  console.log("mongoose connection is successful");
 }
-
-mongoose.Promise = Promise;
-var db = mongoose.connection;
-
-db.on('error', function(err) {
-  console.log('Mongoose Error: ', err);
 });
 
-db.once('open', function() {
-  console.log('Mongoose connection successful.');
-});
+
 
 // Routes
 
