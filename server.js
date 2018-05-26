@@ -11,7 +11,9 @@ var axios = require('axios');
 var cheerio = require('cheerio');
 
 // Require all models
-var db = require('./models');
+var Article = require('./models/Article.js');
+var Note = require('./models/Note.js');
+// var db = require('./models');
 
 var PORT = 8000;
 
@@ -34,14 +36,34 @@ app.engine('handlebars', exphbs({ defaultLayout: 'main' }));
 app.set('view engine', 'handlebars');
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost/onion');
+//mongoose.connect('mongodb://localhost/onion');
+
+// Define local MongoDB URI
+var databaseUri = 'mongodb://localhost/onion';
+
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI);
+} else {
+  mongoose.connect(databaseUri);
+}
+
+mongoose.Promise = Promise;
+var db = mongoose.connection;
+
+db.on('error', function(err) {
+  console.log('Mongoose Error: ', err);
+});
+
+db.once('open', function() {
+  console.log('Mongoose connection successful.');
+});
 
 // Routes
 
 // GET route displaying all articles
 app.get('/', function(req, res) {
   //query the database to sort all entries from new to oldest
-  db.Article.find()
+  Article.find()
     .sort({ _id: -1 })
 
     //execute the articles to handlebars and render
@@ -78,7 +100,7 @@ app.get('/scrape', function(req, res) {
       result.link = link;
 
       // Create a new Article using the 'result' object
-      db.Article.create(result)
+      Article.create(result)
         .then(function(dbArticle) {
           console.log(dbArticle);
         })
@@ -93,7 +115,7 @@ app.get('/scrape', function(req, res) {
 });
 
 app.get('/articles', function(req, res) {
-  db.Article.find({})
+  Article.find({})
     .then(function(dbArticle) {
       res.json(dbArticle);
     })
@@ -103,7 +125,7 @@ app.get('/articles', function(req, res) {
 });
 
 app.get('/articles/:id', function(req, res) {
-  db.Article.findOne({ _id: req.params.id })
+  Article.findOne({ _id: req.params.id })
     .populate('note')
     .then(function(dbArticle) {
       res.json(dbArticle);
@@ -114,9 +136,9 @@ app.get('/articles/:id', function(req, res) {
 });
 
 app.post('/articles/:id', function(req, res) {
-  db.Note.create(req.body)
+  Note.create(req.body)
     .then(function(dbNote) {
-      return db.Article.findOneAndUpdate(
+      return Article.findOneAndUpdate(
         { _id: req.params.id },
         { note: dbNote._id },
         { new: true }
