@@ -4,12 +4,13 @@ var bodyParser = require('body-parser');
 var path = require('path');
 var logger = require('morgan');
 var mongoose = require('mongoose');
+var request = require('request');
 
 // Scraping tools
 var axios = require('axios');
 var cheerio = require('cheerio');
 
-// Require all our models
+// Require all models
 var db = require('./models');
 
 var PORT = 8000;
@@ -29,13 +30,30 @@ app.use(express.static('public'));
 // Handlebars
 var exphbs = require('express-handlebars');
 
-app.engine('hbs', exphbs({ defaultLayout: 'main' }));
-app.set('view engine', 'hbs');
+app.engine('handlebars', exphbs({ defaultLayout: 'main' }));
+app.set('view engine', 'handlebars');
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost/onion');
 
 // Routes
+
+// GET route displaying all articles
+app.get('/', function(req, res) {
+  //query the database to sort all entries from new to oldest
+  db.Article.find()
+    .sort({ _id: -1 })
+
+    //execute the articles to handlebars and render
+    .exec(function(err, doc) {
+      if (err) {
+        console.log(err);
+      } else {
+        var artcl = { article: doc };
+        res.render('index', artcl);
+      }
+    });
+});
 
 // GET route for scraping the Onion website
 app.get('/scrape', function(req, res) {
@@ -49,12 +67,15 @@ app.get('/scrape', function(req, res) {
       var result = {};
 
       // Add the text and href of every link, save them as properties of the result object
-      result.title = $(this)
+      var title = $(this)
         .children('a')
         .text();
-      result.link = $(this)
+      var link = $(this)
         .children('a')
         .attr('href');
+
+      result.title = title;
+      result.link = link;
 
       // Create a new Article using the 'result' object
       db.Article.create(result)
@@ -67,7 +88,7 @@ app.get('/scrape', function(req, res) {
         });
     });
     // If successful, send a message to the client
-    res.send('Scrape complete!');
+    res.redirect('/');
   });
 });
 
@@ -81,7 +102,7 @@ app.get('/articles', function(req, res) {
     });
 });
 
-app.get('articles/:id', function(req, res) {
+app.get('/articles/:id', function(req, res) {
   db.Article.findOne({ _id: req.params.id })
     .populate('note')
     .then(function(dbArticle) {
@@ -96,7 +117,10 @@ app.post('/articles/:id', function(req, res) {
   db.Note.create(req.body)
     .then(function(dbNote) {
       return db.Article.findOneAndUpdate(
-        { _id: req.params.id }, { note: dbNote._id }, { new: true });
+        { _id: req.params.id },
+        { note: dbNote._id },
+        { new: true }
+      );
     })
     .then(function(dbArticle) {
       res.json(dbArticle);
