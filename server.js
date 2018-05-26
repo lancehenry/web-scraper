@@ -41,27 +41,22 @@ app.set('view engine', 'handlebars');
 // Define local MongoDB URI
 // var databaseUri = 'mongodb://localhost/onion';
 
-
-
-var db = process.env.MONGODB_URI || "mongodb://localhost/onion";
+var db = process.env.MONGODB_URI || 'mongodb://localhost/onion';
 
 mongoose.connect(db, function(error) {
   if (error) {
-      console.log(error);
+    console.log(error);
+  } else {
+    console.log('mongoose connection is successful');
   }
-
-else {
-  console.log("mongoose connection is successful");
-}
 });
-
 
 // Routes
 
 // GET route displaying all articles
 app.get('/', function(req, res) {
   //query the database to sort all entries from new to oldest
-  Article.find()
+  db.Article.find()
     .sort({ _id: -1 })
 
     //execute the articles to handlebars and render
@@ -98,7 +93,7 @@ app.get('/scrape', function(req, res) {
       result.link = link;
 
       // Create a new Article using the 'result' object
-      Article.create(result)
+      db.Article.create(result)
         .then(function(dbArticle) {
           console.log(dbArticle);
         })
@@ -113,7 +108,7 @@ app.get('/scrape', function(req, res) {
 });
 
 app.get('/articles', function(req, res) {
-  Article.find({})
+  db.Article.find({})
     .then(function(dbArticle) {
       res.json(dbArticle);
     })
@@ -123,7 +118,7 @@ app.get('/articles', function(req, res) {
 });
 
 app.get('/articles/:id', function(req, res) {
-  Article.findOne({ _id: req.params.id })
+  db.Article.findOne({ _id: req.params.id })
     .populate('note')
     .then(function(dbArticle) {
       res.json(dbArticle);
@@ -134,9 +129,9 @@ app.get('/articles/:id', function(req, res) {
 });
 
 app.post('/articles/:id', function(req, res) {
-  Note.create(req.body)
+  db.Note.create(req.body)
     .then(function(dbNote) {
-      return Article.findOneAndUpdate(
+      return db.Article.findOneAndUpdate(
         { _id: req.params.id },
         { note: dbNote._id },
         { new: true }
