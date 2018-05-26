@@ -56,7 +56,6 @@ else {
 });
 
 
-
 // Routes
 
 // GET route displaying all articles
