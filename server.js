@@ -20,6 +20,16 @@ var PORT = process.env.PORT || 8000;
 // Initialize Express
 var app = express();
 
+// Connect to Mongo
+var db = process.env.MONGODB_URI || 'mongodb://localhost/onion';
+mongoose.connect(db, function(error) {
+  if (error) {
+    console.log(error);
+  } else {
+    console.log('mongoose connection is successful');
+  }
+});
+
 // Use morgan logger for logging requests
 app.use(logger('dev'));
 
@@ -40,16 +50,6 @@ app.set('view engine', 'handlebars');
 
 // Define local MongoDB URI
 // var databaseUri = 'mongodb://localhost/onion';
-
-var db = process.env.MONGODB_URI || 'mongodb://localhost/onion';
-
-mongoose.connect(db, function(error) {
-  if (error) {
-    console.log(error);
-  } else {
-    console.log('mongoose connection is successful');
-  }
-});
 
 // Routes
 
