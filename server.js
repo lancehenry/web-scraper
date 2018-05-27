@@ -57,7 +57,7 @@ app.set('view engine', 'handlebars');
 app.get('/', function(req, res) {
   //query the database to sort all entries from new to oldest
   Article.find()
-    .sort({ _id: -1 })
+    .sort({ _id: 1 })
 
     //execute the articles to handlebars and render
     .exec(function(err, doc) {
@@ -65,8 +65,9 @@ app.get('/', function(req, res) {
         console.log(err);
       } else {
         var artcl = { article: doc };
-        res.render('index', artcl);
+        
       }
+      res.render('index', artcl);
     });
 });
 
