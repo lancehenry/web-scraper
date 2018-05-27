@@ -20,14 +20,16 @@ var PORT = process.env.PORT || 8000;
 // Initialize Express
 var app = express();
 
-// Connect to Mongo
-var db = process.env.MONGODB_URI || 'mongodb://localhost/onion';
-mongoose.connect(db, function(error) {
-  if (error) {
-    console.log(error);
-  } else {
-    console.log('mongoose connection is successful');
-  }
+mongoose.connect('mongodb://heroku_xf2bw80d:n9jmr3chocst73m3hrbip9qj71@ds235860.mlab.com:35860/heroku_xf2bw80d');
+var db = mongoose.connection;
+
+db.on("error", function(error) {
+  console.log("Mongoose Error: ", error);
+});
+
+// Once logged in to the db through mongoose, log a success message
+db.once("open", function() {
+  console.log("Mongoose connection successful.");
 });
 
 // Use morgan logger for logging requests
